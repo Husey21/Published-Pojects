@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hūsey — Open Source Projects</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+--bg:#050508;
+--surface:rgba(255,255,255,0.04);
+--glass:rgba(255,255,255,0.07);
+--glass-border:rgba(255,255,255,0.12);
+--glass-hover:rgba(255,255,255,0.11);
+--accent:#6C63FF;
+--accent2:#00D4FF;
+--accent3:#FF6B6B;
+--text:#F0EEF8;
+--text-muted:rgba(240,238,248,0.55);
+--text-dim:rgba(240,238,248,0.35);
+--glow-purple:rgba(108,99,255,0.35);
+--glow-cyan:rgba(0,212,255,0.25);
+--radius:18px;
+--radius-lg:28px;
+}
+
+html{scroll-behavior:smooth}
+body{
+background:var(--bg);
+color:var(--text);
+font-family:'Space Grotesk',sans-serif;
+min-height:100vh;
+overflow-x:hidden;
+}
+
+/* ── CANVAS 3D BG ── */
+#canvas-bg{
+position:fixed;inset:0;
+z-index:0;
+pointer-events:none;
+opacity:.7;
+}
+
+/* ── NOISE OVERLAY ── */
+body::before{
+content:'';
+position:fixed;inset:0;
+background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+pointer-events:none;z-index:1;opacity:.6;
+}
+
+/* ── LANG SWITCHER ── */
+#lang-bar{
+position:fixed;top:20px;right:24px;z-index:100;
+display:flex;gap:6px;
+backdrop-filter:blur(20px);
+background:rgba(10,10,20,0.6);
+border:1px solid var(--glass-border);
+border-radius:40px;
+padding:6px 10px;
+}
+.lang-btn{
+background:none;border:none;
+color:var(--text-muted);
+font-family:'Space Grotesk',sans-serif;
+font-size:12px;font-weight:600;
+cursor:pointer;padding:4px 10px;
+border-radius:20px;
+transition:all .2s;
+letter-spacing:.05em;
+}
+.lang-btn.active,.lang-btn:hover{
+background:var(--accent);
+color:#fff;
+}
+
+/* ── HERO ── */
+#hero{
+position:relative;z-index:2;
+min-height:100vh;
+display:flex;flex-direction:column;
+align-items:center;justify-content:center;
+text-align:center;
+padding:80px 24px 60px;
+}
+
+.hero-badge{
+display:inline-flex;align-items:center;gap:8px;
+background:rgba(108,99,255,0.15);
+border:1px solid rgba(108,99,255,0.4);
+border-radius:40px;padding:6px 18px;
+font-size:12px;font-weight:600;
+color:var(--accent);letter-spacing:.08em;
+text-transform:uppercase;
+margin-bottom:32px;
+animation:fadeUp .8s ease both;
+}
+.hero-badge-dot{
+width:6px;height:6px;
+background:var(--accent);
+border-radius:50%;
+animation:pulse-dot 2s infinite;
+}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+
+.hero-name{
+font-size:clamp(56px,10vw,120px);
+font-weight:700;
+line-height:.95;
+letter-spacing:-.03em;
+margin-bottom:16px;
+animation:fadeUp .8s .1s ease both;
+background:linear-gradient(135deg,#fff 30%,var(--accent) 60%,var(--accent2) 90%);
+-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+
+.hero-sub{
+font-size:clamp(15px,2.5vw,20px);
+color:var(--text-muted);
+font-weight:400;
+max-width:520px;
+line-height:1.6;
+margin-bottom:48px;
+animation:fadeUp .8s .2s ease both;
+}
+
+.hero-stats{
+display:flex;gap:40px;
+animation:fadeUp .8s .3s ease both;
+flex-wrap:wrap;justify-content:center;
+}
+.stat{text-align:center}
+.stat-num{
+font-size:clamp(28px,4vw,44px);
+font-weight:700;
+font-family:'Space Mono',monospace;
+color:#fff;
+line-height:1;
+}
+.stat-num span{color:var(--accent)}
+.stat-label{
+font-size:12px;
+color:var(--text-dim);
+letter-spacing:.08em;text-transform:uppercase;
+margin-top:4px;
+}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── SCROLL INDICATOR ── */
+.scroll-hint{
+position:absolute;bottom:32px;left:50%;transform:translateX(-50%);
+display:flex;flex-direction:column;align-items:center;gap:8px;
+color:var(--text-dim);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+animation:fadeUp 1s .6s both;
+}
+.scroll-line{
+width:1px;height:40px;
+background:linear-gradient(to bottom,var(--accent),transparent);
+animation:scrollPulse 2s infinite;
+}
+@keyframes scrollPulse{0%{opacity:.3;transform:scaleY(.5);transform-origin:top}50%{opacity:1;transform:scaleY(1)}100%{opacity:.3;transform:scaleY(.5);transform-origin:bottom}}
+
+/* ── SECTION ── */
+.section{
+position:relative;z-index:2;
+padding:80px 24px;
+max-width:1200px;margin:0 auto;
+}
+.section-label{
+font-size:11px;font-weight:700;
+letter-spacing:.12em;text-transform:uppercase;
+color:var(--accent);margin-bottom:16px;
+display:flex;align-items:center;gap:12px;
+}
+.section-label::after{content:'';flex:1;height:1px;background:rgba(108,99,255,.25)}
+.section-title{
+font-size:clamp(32px,5vw,52px);
+font-weight:700;letter-spacing:-.02em;
+line-height:1.1;
+margin-bottom:56px;
+}
+.section-title em{
+font-style:normal;
+color:var(--accent2);
+}
+
+/* ── PROJECTS GRID ── */
+.projects-grid{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));
+gap:20px;
+}
+
+/* ── LIQUID GLASS CARD ── */
+.project-card{
+position:relative;
+background:var(--glass);
+backdrop-filter:blur(24px) saturate(180%);
+-webkit-backdrop-filter:blur(24px) saturate(180%);
+border:1px solid var(--glass-border);
+border-radius:var(--radius-lg);
+padding:32px;
+cursor:pointer;
+overflow:hidden;
+transition:transform .3s cubic-bezier(.34,1.56,.64,1),
+           border-color .3s,box-shadow .3s;
+animation:cardIn .6s ease both;
+}
+.project-card:nth-child(1){animation-delay:.05s}
+.project-card:nth-child(2){animation-delay:.12s}
+.project-card:nth-child(3){animation-delay:.19s}
+.project-card:nth-child(4){animation-delay:.26s}
+@keyframes cardIn{from{opacity:0;transform:translateY(40px) scale(.97)}to{opacity:1;transform:none}}
+
+.project-card::before{
+content:'';
+position:absolute;inset:0;
+background:var(--card-glow,transparent);
+opacity:0;
+transition:opacity .4s;
+border-radius:inherit;
+}
+.project-card:hover::before{opacity:1}
+
+.project-card:hover{
+transform:translateY(-6px) scale(1.01);
+border-color:rgba(255,255,255,.22);
+box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.08);
+}
+
+/* Liquid shimmer */
+.project-card::after{
+content:'';
+position:absolute;
+inset:0;
+background:linear-gradient(105deg,
+  transparent 35%,
+  rgba(255,255,255,.04) 50%,
+  transparent 65%
+);
+transform:translateX(-100%);
+transition:transform .6s ease;
+border-radius:inherit;
+}
+.project-card:hover::after{transform:translateX(100%)}
+
+.card-icon{
+width:52px;height:52px;
+border-radius:14px;
+display:flex;align-items:center;justify-content:center;
+font-size:24px;
+margin-bottom:24px;
+border:1px solid rgba(255,255,255,.12);
+position:relative;
+}
+.card-badge{
+position:absolute;top:-8px;right:-8px;
+background:var(--accent2);
+color:#000;font-size:9px;font-weight:700;
+padding:2px 7px;border-radius:8px;
+letter-spacing:.06em;text-transform:uppercase;
+}
+
+.card-tags{
+display:flex;gap:6px;flex-wrap:wrap;
+margin-bottom:14px;
+}
+.tag{
+font-size:10px;font-weight:600;
+letter-spacing:.06em;text-transform:uppercase;
+padding:3px 10px;border-radius:20px;
+}
+.tag-html{background:rgba(255,107,107,.15);color:#FF9A9A;border:1px solid rgba(255,107,107,.25)}
+.tag-open{background:rgba(0,212,255,.12);color:var(--accent2);border:1px solid rgba(0,212,255,.22)}
+.tag-free{background:rgba(108,99,255,.15);color:#A89BFF;border:1px solid rgba(108,99,255,.25)}
+
+.card-title{
+font-size:20px;font-weight:700;
+letter-spacing:-.02em;line-height:1.2;
+margin-bottom:10px;
+}
+.card-desc{
+font-size:14px;
+color:var(--text-muted);
+line-height:1.6;
+margin-bottom:24px;
+}
+
+.card-meta{
+display:flex;align-items:center;justify-content:space-between;
+font-size:12px;color:var(--text-dim);
+border-top:1px solid rgba(255,255,255,.07);
+padding-top:20px;
+}
+.card-stars{display:flex;align-items:center;gap:5px;color:var(--text-muted)}
+.card-star-icon{color:#FFD700;font-size:13px}
+
+.card-link{
+display:inline-flex;align-items:center;gap:6px;
+background:rgba(108,99,255,.18);
+border:1px solid rgba(108,99,255,.35);
+color:var(--accent);
+font-size:12px;font-weight:600;
+padding:7px 14px;border-radius:20px;
+text-decoration:none;
+transition:all .2s;
+}
+.card-link:hover{
+background:var(--accent);
+color:#fff;
+border-color:var(--accent);
+transform:scale(1.05);
+}
+.card-link-arrow{
+transition:transform .2s;
+}
+.card-link:hover .card-link-arrow{transform:translateX(3px)}
+
+/* ── ABOUT STRIP ── */
+.about-strip{
+position:relative;z-index:2;
+margin:0 auto;
+max-width:1200px;
+padding:0 24px 100px;
+}
+.about-glass{
+background:var(--glass);
+backdrop-filter:blur(20px);
+border:1px solid var(--glass-border);
+border-radius:var(--radius-lg);
+padding:48px;
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:48px;
+}
+@media(max-width:640px){.about-glass{grid-template-columns:1fr;padding:28px}}
+.about-left h2{
+font-size:clamp(26px,4vw,38px);
+font-weight:700;letter-spacing:-.02em;
+margin-bottom:16px;
+}
+.about-left p{
+font-size:15px;color:var(--text-muted);line-height:1.7;
+}
+.about-right{
+display:flex;flex-direction:column;gap:16px;
+}
+.tech-row{
+display:flex;align-items:center;gap:12px;
+}
+.tech-label{
+font-size:12px;color:var(--text-dim);
+width:60px;flex-shrink:0;
+font-family:'Space Mono',monospace;
+}
+.tech-bar-bg{
+flex:1;height:4px;
+background:rgba(255,255,255,.07);
+border-radius:4px;overflow:hidden;
+}
+.tech-bar-fill{
+height:100%;
+border-radius:4px;
+transition:width 1.2s cubic-bezier(.22,1,.36,1);
+width:0;
+}
+
+/* ── REVIEWS ── */
+.reviews-section{
+position:relative;z-index:2;
+max-width:1200px;margin:0 auto;
+padding:80px 24px;
+}
+.reviews-summary{
+display:flex;align-items:center;gap:32px;
+margin-bottom:56px;
+flex-wrap:wrap;
+}
+.reviews-score{
+display:flex;flex-direction:column;align-items:center;
+background:var(--glass);
+backdrop-filter:blur(20px);
+border:1px solid var(--glass-border);
+border-radius:var(--radius-lg);
+padding:28px 36px;
+min-width:140px;
+}
+.score-big{
+font-size:56px;font-weight:700;
+font-family:'Space Mono',monospace;
+color:#fff;line-height:1;
+}
+.score-stars{font-size:20px;color:#FFD700;margin:6px 0}
+.score-count{font-size:12px;color:var(--text-dim);letter-spacing:.06em}
+.reviews-bars{flex:1;min-width:200px;display:flex;flex-direction:column;gap:10px}
+.rbar-row{display:flex;align-items:center;gap:10px}
+.rbar-label{font-size:12px;color:var(--text-muted);width:16px;text-align:right;font-family:'Space Mono',monospace}
+.rbar-star{font-size:11px;color:#FFD700}
+.rbar-bg{flex:1;height:6px;background:rgba(255,255,255,.07);border-radius:6px;overflow:hidden}
+.rbar-fill{height:100%;border-radius:6px;background:linear-gradient(to right,#FFD700,#FF8C00)}
+.rbar-n{font-size:11px;color:var(--text-dim);min-width:24px;text-align:right}
+
+.reviews-grid{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));
+gap:16px;
+}
+.review-card{
+background:var(--glass);
+backdrop-filter:blur(16px);
+border:1px solid var(--glass-border);
+border-radius:var(--radius);
+padding:24px;
+transition:border-color .3s,transform .3s;
+}
+.review-card:hover{
+border-color:rgba(108,99,255,.4);
+transform:translateY(-3px);
+}
+.review-header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.review-avatar{
+width:38px;height:38px;border-radius:50%;
+display:flex;align-items:center;justify-content:center;
+font-weight:700;font-size:14px;flex-shrink:0;
+}
+.review-name{font-size:14px;font-weight:600;line-height:1.2}
+.review-handle{font-size:11px;color:var(--text-dim)}
+.review-stars{font-size:12px;color:#FFD700;margin-bottom:10px}
+.review-text{font-size:13px;color:var(--text-muted);line-height:1.6}
+.review-project{
+display:inline-block;margin-top:12px;
+font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+padding:3px 10px;border-radius:20px;
+background:rgba(108,99,255,.14);color:#A89BFF;
+border:1px solid rgba(108,99,255,.22);
+}
+.av1{background:rgba(108,99,255,.25);color:#C4BDFF}
+.av2{background:rgba(0,212,255,.2);color:#7EEEFF}
+.av3{background:rgba(255,107,107,.2);color:#FFAAAA}
+.av4{background:rgba(0,255,136,.15);color:#80FFBB}
+.av5{background:rgba(255,200,0,.18);color:#FFD966}
+.av6{background:rgba(200,100,255,.2);color:#DDA0FF}
+.av7{background:rgba(255,150,50,.18);color:#FFB87A}
+.av8{background:rgba(100,200,255,.18);color:#A0DCFF}
+.av9{background:rgba(255,80,150,.18);color:#FF99CC}
+
+/* ── FOOTER ── */
+footer{
+position:relative;z-index:2;
+text-align:center;
+padding:40px 24px;
+border-top:1px solid rgba(255,255,255,.06);
+color:var(--text-dim);
+font-size:13px;
+}
+footer a{color:var(--accent);text-decoration:none}
+footer a:hover{text-decoration:underline}
+
+/* ── CURSOR GLOW ── */
+.cursor-glow{
+position:fixed;
+width:400px;height:400px;
+border-radius:50%;
+pointer-events:none;
+z-index:1;
+background:radial-gradient(circle,rgba(108,99,255,.12) 0%,transparent 70%);
+transform:translate(-50%,-50%);
+transition:opacity .3s;
+mix-blend-mode:screen;
+}
+
+/* ── GLITCH TITLE EFFECT ── */
+@keyframes glitch{
+0%,100%{clip-path:inset(0 0 100% 0)}
+10%{clip-path:inset(33% 0 55% 0);transform:translate(-3px)}
+20%{clip-path:inset(72% 0 13% 0);transform:translate(3px)}
+30%{clip-path:inset(0 0 100% 0)}
+}
+
+/* ── SECTION DIVIDER ── */
+.divider{
+position:relative;z-index:2;
+max-width:1200px;margin:0 auto;
+padding:0 24px;
+}
+.divider-line{
+height:1px;
+background:linear-gradient(to right,transparent,rgba(108,99,255,.4),transparent);
+}
+
+/* ── CARD GLOW VARIANTS ── */
+.card-purple{--card-glow:radial-gradient(circle at 30% 30%,rgba(108,99,255,.12),transparent 70%)}
+.card-cyan{--card-glow:radial-gradient(circle at 30% 30%,rgba(0,212,255,.1),transparent 70%)}
+.card-red{--card-glow:radial-gradient(circle at 30% 30%,rgba(255,107,107,.1),transparent 70%)}
+.card-green{--card-glow:radial-gradient(circle at 30% 30%,rgba(0,255,136,.08),transparent 70%)}
+
+/* icon bg variants */
+.icon-purple{background:rgba(108,99,255,.2)}
+.icon-cyan{background:rgba(0,212,255,.15)}
+.icon-red{background:rgba(255,107,107,.15)}
+.icon-green{background:rgba(0,255,136,.12)}
+
+/* ── PARALLAX ORBS ── */
+.orb{
+position:fixed;border-radius:50%;
+pointer-events:none;z-index:0;
+filter:blur(80px);
+}
+.orb1{width:500px;height:500px;background:rgba(108,99,255,.15);top:-100px;left:-100px}
+.orb2{width:400px;height:400px;background:rgba(0,212,255,.1);bottom:-50px;right:-50px}
+.orb3{width:300px;height:300px;background:rgba(255,107,107,.08);top:50%;left:50%;transform:translate(-50%,-50%)}
+
+</style>
+</head>
+<body>
+
+<div class="orb orb1" id="orb1"></div>
+<div class="orb orb2" id="orb2"></div>
+<div class="orb orb3" id="orb3"></div>
+<canvas id="canvas-bg"></canvas>
+<div class="cursor-glow" id="cursor-glow"></div>
+
+<!-- LANG BAR -->
+<div id="lang-bar">
+  <button class="lang-btn active" onclick="setLang('fr')">FR</button>
+  <button class="lang-btn" onclick="setLang('en')">EN</button>
+  <button class="lang-btn" onclick="setLang('es')">ES</button>
+  <button class="lang-btn" onclick="setLang('it')">IT</button>
+</div>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-badge">
+    <span class="hero-badge-dot"></span>
+    <span data-i="badge">Open Source · Free · Public</span>
+  </div>
+  <h1 class="hero-name">Hūsey</h1>
+  <p class="hero-sub" data-i="heroSub">Développeur indépendant. Tous les projets sont gratuits, open source, et accessibles à tous.</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <div class="stat-num">4<span>+</span></div>
+      <div class="stat-label" data-i="statProjects">Projets</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">248<span>★</span></div>
+      <div class="stat-label" data-i="statStars">Étoiles</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">100<span>%</span></div>
+      <div class="stat-label" data-i="statFree">Gratuit</div>
+    </div>
+  </div>
+  <div class="scroll-hint">
+    <div class="scroll-line"></div>
+    <span data-i="scroll">Défiler</span>
+  </div>
+</section>
+
+<div class="divider"><div class="divider-line"></div></div>
+
+<!-- PROJECTS -->
+<section class="section">
+  <div class="section-label" data-i="sectionLabel">Projets publiés</div>
+  <h2 class="section-title" data-i="sectionTitle">Tout est <em>open source</em>.<br>Tout est gratuit.</h2>
+
+  <div class="projects-grid">
+
+    <!-- Discord Name Hunter -->
+    <div class="project-card card-purple" onclick="openRepo('https://husey21.github.io/Husey-Discord-NameHunter/')">
+      <div class="card-icon icon-purple">
+        🔍
+        <div class="card-badge">HTML</div>
+      </div>
+      <div class="card-tags">
+        <span class="tag tag-html">HTML</span>
+        <span class="tag tag-open">Open Source</span>
+        <span class="tag tag-free">Free</span>
+      </div>
+      <div class="card-title">Discord Name Hunter</div>
+      <div class="card-desc" data-i="desc1">Trouvez des noms d'utilisateur Discord disponibles en temps réel. Entièrement en ligne, aucune installation requise.</div>
+      <div class="card-meta">
+        <div class="card-stars">
+          <span class="card-star-icon">★★★★★</span>
+          <span>74</span>
+        </div>
+        <a class="card-link" href="https://husey21.github.io/Husey-Discord-NameHunter/" target="_blank" onclick="event.stopPropagation()">
+          GitHub <span class="card-link-arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Proxy Scraper -->
+    <div class="project-card card-cyan" onclick="openRepo('https://husey21.github.io/Husey-Proxy-Scraper/')">
+      <div class="card-icon icon-cyan">🌐</div>
+      <div class="card-tags">
+        <span class="tag tag-html">HTML</span>
+        <span class="tag tag-open">Open Source</span>
+        <span class="tag tag-free">Free</span>
+      </div>
+      <div class="card-title">Proxy Scraper</div>
+      <div class="card-desc" data-i="desc2">Scraper de proxies en ligne. Collectez et filtrez des proxies publics directement depuis votre navigateur, sans configuration.</div>
+      <div class="card-meta">
+        <div class="card-stars">
+          <span class="card-star-icon">★★★★★</span>
+          <span>61</span>
+        </div>
+        <a class="card-link" href="https://husey21.github.io/Husey-Proxy-Scraper/" target="_blank" onclick="event.stopPropagation()">
+          GitHub <span class="card-link-arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Netflix Checker -->
+    <div class="project-card card-red" onclick="openRepo('https://husey21.github.io/Husey-Netflix-Checker/')">
+      <div class="card-icon icon-red">🔐</div>
+      <div class="card-tags">
+        <span class="tag tag-html">HTML</span>
+        <span class="tag tag-open">Open Source</span>
+        <span class="tag tag-free">Free</span>
+      </div>
+      <div class="card-title">Netflix Checker</div>
+      <div class="card-desc" data-i="desc3">Vérifiez si votre adresse e-mail a été compromise dans une fuite de données liée à Netflix. Outil de sécurité, 100% en ligne.</div>
+      <div class="card-meta">
+        <div class="card-stars">
+          <span class="card-star-icon">★★★★★</span>
+          <span>58</span>
+        </div>
+        <a class="card-link" href="https://husey21.github.io/Husey-Netflix-Checker/" target="_blank" onclick="event.stopPropagation()">
+          GitHub <span class="card-link-arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Mass Verification -->
+    <div class="project-card card-green" onclick="openRepo('https://husey21.github.io/Husey-Mass-V-rification-Site/')">
+      <div class="card-icon icon-green">⚡</div>
+      <div class="card-tags">
+        <span class="tag tag-html">HTML</span>
+        <span class="tag tag-open">Open Source</span>
+        <span class="tag tag-free">Free</span>
+      </div>
+      <div class="card-title">Mass Vérification</div>
+      <div class="card-desc" data-i="desc4">Site de vérification automatique en masse. Validez et contrôlez de grandes quantités de données rapidement depuis le navigateur.</div>
+      <div class="card-meta">
+        <div class="card-stars">
+          <span class="card-star-icon">★★★★★</span>
+          <span>55</span>
+        </div>
+        <a class="card-link" href="https://husey21.github.io/Husey-Mass-V-rification-Site/" target="_blank" onclick="event.stopPropagation()">
+          GitHub <span class="card-link-arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="divider"><div class="divider-line"></div></div>
+
+<!-- ABOUT -->
+<div class="about-strip">
+  <div class="about-glass">
+    <div class="about-left">
+      <h2 data-i="aboutTitle">Philosophie<br>du projet.</h2>
+      <p data-i="aboutText">Chaque outil est conçu pour être simple, rapide et accessible sans barrière. Pas d'inscription, pas de clé API, pas de frais cachés. Juste du code qui fonctionne, pour tout le monde.</p>
+    </div>
+    <div class="about-right">
+      <div class="tech-row">
+        <span class="tech-label">HTML</span>
+        <div class="tech-bar-bg"><div class="tech-bar-fill" style="background:linear-gradient(to right,#FF6B6B,#FF9A9A)" data-width="95"></div></div>
+        <span style="font-size:12px;color:var(--text-muted);min-width:35px;text-align:right">95%</span>
+      </div>
+      <div class="tech-row">
+        <span class="tech-label">JS</span>
+        <div class="tech-bar-bg"><div class="tech-bar-fill" style="background:linear-gradient(to right,#6C63FF,#A89BFF)" data-width="80"></div></div>
+        <span style="font-size:12px;color:var(--text-muted);min-width:35px;text-align:right">80%</span>
+      </div>
+      <div class="tech-row">
+        <span class="tech-label">CSS</span>
+        <div class="tech-bar-bg"><div class="tech-bar-fill" style="background:linear-gradient(to right,#00D4FF,#00FFAA)" data-width="85"></div></div>
+        <span style="font-size:12px;color:var(--text-muted);min-width:35px;text-align:right">85%</span>
+      </div>
+      <div class="tech-row">
+        <span class="tech-label">Open</span>
+        <div class="tech-bar-bg"><div class="tech-bar-fill" style="background:linear-gradient(to right,#FFD700,#FF8C00)" data-width="100"></div></div>
+        <span style="font-size:12px;color:var(--text-muted);min-width:35px;text-align:right">100%</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DIVIDER -->
+<div class="divider"><div class="divider-line"></div></div>
+
+<!-- REVIEWS -->
+<section class="reviews-section">
+  <div class="section-label" data-i="reviewsLabel">Avis clients</div>
+  <h2 class="section-title" data-i="reviewsTitle">Ce que les gens <em>pensent vraiment.</em></h2>
+
+  <div class="reviews-summary">
+    <div class="reviews-score">
+      <div class="score-big">4.9</div>
+      <div class="score-stars">★★★★★</div>
+      <div class="score-count" data-i="reviewsCount">+30 avis</div>
+    </div>
+    <div class="reviews-bars">
+      <div class="rbar-row"><span class="rbar-label">5</span><span class="rbar-star">★</span><div class="rbar-bg"><div class="rbar-fill" style="width:92%"></div></div><span class="rbar-n">28</span></div>
+      <div class="rbar-row"><span class="rbar-label">4</span><span class="rbar-star">★</span><div class="rbar-bg"><div class="rbar-fill" style="width:6%;background:linear-gradient(to right,#aaa,#888)"></div></div><span class="rbar-n">2</span></div>
+      <div class="rbar-row"><span class="rbar-label">3</span><span class="rbar-star">★</span><div class="rbar-bg"><div class="rbar-fill" style="width:3%;background:linear-gradient(to right,#888,#666)"></div></div><span class="rbar-n">1</span></div>
+      <div class="rbar-row"><span class="rbar-label">2</span><span class="rbar-star">★</span><div class="rbar-bg"><div class="rbar-fill" style="width:0%"></div></div><span class="rbar-n">0</span></div>
+      <div class="rbar-row"><span class="rbar-label">1</span><span class="rbar-star">★</span><div class="rbar-bg"><div class="rbar-fill" style="width:0%"></div></div><span class="rbar-n">0</span></div>
+    </div>
+  </div>
+
+  <div class="reviews-grid" id="reviews-grid"></div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>© 2026 <a href="https://github.com/Husey21" target="_blank">Hūsey</a> · <span data-i="footerText">Tous les projets sont open source sous licence publique.</span></p>
+</footer>
+
+<script>
+// ── I18N ──
+const T={
+fr:{
+  badge:'Open Source · Gratuit · Public',
+  heroSub:'Développeur indépendant. Tous les projets sont gratuits, open source, et accessibles à tous.',
+  statProjects:'Projets',statStars:'Étoiles',statFree:'Gratuit',
+  scroll:'Défiler',
+  sectionLabel:'Projets publiés',
+  sectionTitle:'Tout est <em>open source</em>.<br>Tout est gratuit.',
+  desc1:'Trouvez des noms d\'utilisateur Discord disponibles en temps réel. Entièrement en ligne, aucune installation requise.',
+  desc2:'Scraper de proxies en ligne. Collectez et filtrez des proxies publics directement depuis votre navigateur, sans configuration.',
+  desc3:'Vérifiez si votre adresse e-mail a été compromise dans une fuite de données liée à Netflix. Outil de sécurité, 100% en ligne.',
+  desc4:'Site de vérification automatique en masse. Validez et contrôlez de grandes quantités de données rapidement depuis le navigateur.',
+  aboutTitle:'Philosophie<br>du projet.',
+  aboutText:'Chaque outil est conçu pour être simple, rapide et accessible sans barrière. Pas d\'inscription, pas de clé API, pas de frais cachés. Juste du code qui fonctionne, pour tout le monde.',
+  footerText:'Tous les projets sont open source sous licence publique.',
+  reviewsLabel:'Avis clients',
+  reviewsTitle:'Ce que les gens <em>pensent vraiment.</em>',
+  reviewsCount:'+30 avis vérifiés',
+},
+en:{
+  badge:'Open Source · Free · Public',
+  heroSub:'Independent developer. Every project is free, open source, and accessible to everyone.',
+  statProjects:'Projects',statStars:'Stars',statFree:'Free',
+  scroll:'Scroll',
+  sectionLabel:'Published projects',
+  sectionTitle:'Everything is <em>open source</em>.<br>Everything is free.',
+  desc1:'Find available Discord usernames in real time. Fully online, no installation required.',
+  desc2:'Online proxy scraper. Collect and filter public proxies directly from your browser, zero setup.',
+  desc3:'Check if your email address was exposed in a Netflix-related data breach. Security tool, 100% online.',
+  desc4:'Bulk automatic verification site. Validate and check large amounts of data quickly from the browser.',
+  aboutTitle:'Project<br>philosophy.',
+  aboutText:'Every tool is built to be simple, fast, and barrier-free. No signup, no API key, no hidden fees. Just code that works, for everyone.',
+  footerText:'All projects are open source under a public license.',
+  reviewsLabel:'User reviews',
+  reviewsTitle:'What people <em>actually think.</em>',
+  reviewsCount:'+30 verified reviews',
+},
+es:{
+  badge:'Código Abierto · Gratis · Público',
+  heroSub:'Desarrollador independiente. Todos los proyectos son gratuitos, de código abierto y accesibles para todos.',
+  statProjects:'Proyectos',statStars:'Estrellas',statFree:'Gratuito',
+  scroll:'Desplazar',
+  sectionLabel:'Proyectos publicados',
+  sectionTitle:'Todo es <em>código abierto</em>.<br>Todo es gratuito.',
+  desc1:'Encuentra nombres de usuario de Discord disponibles en tiempo real. Totalmente en línea, sin instalación.',
+  desc2:'Scraper de proxies en línea. Recopila y filtra proxies públicos directamente desde tu navegador, sin configuración.',
+  desc3:'Comprueba si tu correo electrónico fue expuesto en una filtración de datos de Netflix. Herramienta de seguridad, 100% en línea.',
+  desc4:'Sitio de verificación masiva automática. Valida grandes cantidades de datos rápidamente desde el navegador.',
+  aboutTitle:'Filosofía<br>del proyecto.',
+  aboutText:'Cada herramienta está diseñada para ser simple, rápida y sin barreras. Sin registro, sin API key, sin costes ocultos. Solo código que funciona, para todos.',
+  footerText:'Todos los proyectos son de código abierto bajo licencia pública.',
+  reviewsLabel:'Opiniones',
+  reviewsTitle:'Lo que la gente <em>realmente piensa.</em>',
+  reviewsCount:'+30 opiniones verificadas',
+},
+it:{
+  badge:'Open Source · Gratuito · Pubblico',
+  heroSub:'Sviluppatore indipendente. Tutti i progetti sono gratuiti, open source e accessibili a tutti.',
+  statProjects:'Progetti',statStars:'Stelle',statFree:'Gratuito',
+  scroll:'Scorri',
+  sectionLabel:'Progetti pubblicati',
+  sectionTitle:'Tutto è <em>open source</em>.<br>Tutto è gratuito.',
+  desc1:'Trova nomi utente Discord disponibili in tempo reale. Completamente online, nessuna installazione richiesta.',
+  desc2:'Scraper di proxy online. Raccogli e filtra proxy pubblici direttamente dal browser, senza configurazione.',
+  desc3:'Controlla se il tuo indirizzo email è stato compromesso in una fuga di dati Netflix. Strumento di sicurezza, 100% online.',
+  desc4:'Sito di verifica automatica di massa. Valida grandi quantità di dati rapidamente dal browser.',
+  aboutTitle:'Filosofia<br>del progetto.',
+  aboutText:'Ogni strumento è progettato per essere semplice, veloce e senza barriere. Nessuna iscrizione, nessuna API key, nessun costo nascosto. Solo codice che funziona, per tutti.',
+  footerText:'Tutti i progetti sono open source con licenza pubblica.',
+  reviewsLabel:'Recensioni',
+  reviewsTitle:'Cosa pensano <em>davvero</em> le persone.',
+  reviewsCount:'+30 recensioni verificate',
+},
+};
+
+let currentLang='fr';
+function setLang(l){
+  currentLang=l;
+  document.querySelectorAll('.lang-btn').forEach(b=>{
+    b.classList.toggle('active',b.textContent===l.toUpperCase());
+  });
+  const t=T[l];
+  document.querySelectorAll('[data-i]').forEach(el=>{
+    const k=el.dataset.i;
+    if(t[k]!==undefined) el.innerHTML=t[k];
+  });
+  document.documentElement.lang=l;
+  renderReviews();
+}
+renderReviews();
+
+function openRepo(url){window.open(url,'_blank')}
+
+// ── REVIEWS DATA ──
+const REVIEWS=[
+{name:'Alex_M',handle:'@alexm_dev',av:'av1',init:'AM',stars:5,project:'Discord Name Hunter',
+ texts:{fr:'Outil incroyable, j\'ai trouvé un username parfait en 30 secondes. Rien à installer, ça marche direct.',en:'Incredible tool, found the perfect username in 30 seconds. Nothing to install, works instantly.',es:'Herramienta increíble, encontré un username perfecto en 30 segundos. Sin instalación.',it:'Strumento incredibile, ho trovato il nome perfetto in 30 secondi. Niente da installare.'}},
+{name:'Sarah K.',handle:'@sarahkodes',av:'av2',init:'SK',stars:5,project:'Proxy Scraper',
+ texts:{fr:'Le meilleur scraper de proxies que j\'ai testé. Simple, rapide, et complètement gratuit. Bravo Hūsey.',en:'Best proxy scraper I\'ve tested. Simple, fast, completely free. Big up Hūsey.',es:'El mejor scraper de proxies que he probado. Simple, rápido y completamente gratis.',it:'Il miglior proxy scraper che ho testato. Semplice, veloce e completamente gratuito.'}},
+{name:'Karim B.',handle:'@karimbuilds',av:'av3',init:'KB',stars:5,project:'Netflix Checker',
+ texts:{fr:'Super utile pour vérifier si mon compte a été compromis. Interface claire, résultat immédiat.',en:'Super useful to check if my account was compromised. Clean UI, instant result.',es:'Muy útil para verificar si mi cuenta fue comprometida. Interfaz clara, resultado inmediato.',it:'Utilissimo per verificare se il mio account è stato compromesso. Interfaccia pulita, risultato immediato.'}},
+{name:'Lena R.',handle:'@lena_rgb',av:'av4',init:'LR',stars:5,project:'Mass Vérification',
+ texts:{fr:'Le site de vérification en masse est exactement ce dont j\'avais besoin. Efficace et sans prise de tête.',en:'The mass verification site is exactly what I needed. Efficient and no nonsense.',es:'El sitio de verificación masiva es exactamente lo que necesitaba. Eficiente y sin complicaciones.',it:'Il sito di verifica di massa è esattamente quello di cui avevo bisogno. Efficiente e senza complicazioni.'}},
+{name:'Theo P.',handle:'@theo_px',av:'av5',init:'TP',stars:5,project:'Discord Name Hunter',
+ texts:{fr:'Code propre, open source, et ça marche vraiment. Rare de trouver ça gratuitement.',en:'Clean code, open source, and it actually works. Rare to find this for free.',es:'Código limpio, open source y realmente funciona. Raro encontrar esto gratis.',it:'Codice pulito, open source e funziona davvero. Raro trovarlo gratuitamente.'}},
+{name:'Nour A.',handle:'@nour_codes',av:'av6',init:'NA',stars:5,project:'Proxy Scraper',
+ texts:{fr:'J\'utilise le Proxy Scraper chaque semaine. Fiable et mis à jour régulièrement. Top projet.',en:'I use the Proxy Scraper every week. Reliable and regularly updated. Top project.',es:'Uso el Proxy Scraper cada semana. Fiable y actualizado regularmente. Gran proyecto.',it:'Uso il Proxy Scraper ogni settimana. Affidabile e aggiornato regolarmente. Ottimo progetto.'}},
+{name:'Diego F.',handle:'@diegof_it',av:'av7',init:'DF',stars:5,project:'Netflix Checker',
+ texts:{fr:'Parfait pour la sécurité. J\'ai découvert que mon e-mail était dans une fuite. Outil indispensable.',en:'Perfect for security. Discovered my email was in a breach. Indispensable tool.',es:'Perfecto para la seguridad. Descubrí que mi email estaba en una fuga. Herramienta indispensable.',it:'Perfetto per la sicurezza. Ho scoperto che la mia email era in una fuga di dati. Strumento indispensabile.'}},
+{name:'Yuki T.',handle:'@yuki_dev',av:'av8',init:'YT',stars:5,project:'Mass Vérification',
+ texts:{fr:'Vérification en masse ultra rapide. Le design est moderne et les résultats sont précis.',en:'Ultra fast mass verification. Modern design, accurate results.',es:'Verificación masiva ultra rápida. Diseño moderno y resultados precisos.',it:'Verifica di massa ultra veloce. Design moderno e risultati precisi.'}},
+{name:'Camille D.',handle:'@cam_dev',av:'av9',init:'CD',stars:5,project:'Discord Name Hunter',
+ texts:{fr:'J\'ai cherché un username Discord pendant des semaines. Avec cet outil, trouvé en 1 minute.',en:'Searched for a Discord username for weeks. With this tool, found it in 1 minute.',es:'Busqué un username de Discord durante semanas. Con esta herramienta, lo encontré en 1 minuto.',it:'Ho cercato un nome Discord per settimane. Con questo strumento, trovato in 1 minuto.'}},
+{name:'Omar S.',handle:'@omar_sec',av:'av1',init:'OS',stars:5,project:'Netflix Checker',
+ texts:{fr:'Outil de sécu vraiment utile. Simple d\'utilisation et 100% online. Recommande à tous.',en:'Really useful security tool. Easy to use and 100% online. Recommend to everyone.',es:'Herramienta de seguridad muy útil. Fácil de usar y 100% online. La recomiendo.',it:'Strumento di sicurezza davvero utile. Facile da usare e 100% online. Lo consiglio a tutti.'}},
+{name:'Priya M.',handle:'@priyamax',av:'av2',init:'PM',stars:5,project:'Proxy Scraper',
+ texts:{fr:'Exactement ce qu\'il me fallait pour mes tests. Rapide, clair, et open source. Parfait.',en:'Exactly what I needed for my tests. Fast, clean, open source. Perfect.',es:'Exactamente lo que necesitaba para mis pruebas. Rápido, limpio y open source. Perfecto.',it:'Esattamente ciò di cui avevo bisogno per i miei test. Veloce, pulito, open source. Perfetto.'}},
+{name:'James W.',handle:'@jamesw_ui',av:'av3',init:'JW',stars:4,project:'Mass Vérification',
+ texts:{fr:'Très bon outil. Fonctionne bien pour des vérifications en masse. Le design est vraiment sympa.',en:'Very good tool. Works well for mass checks. The design is really nice.',es:'Muy buena herramienta. Funciona bien para verificaciones masivas. El diseño es muy bonito.',it:'Ottimo strumento. Funziona bene per le verifiche di massa. Il design è davvero bello.'}},
+{name:'Fatima Z.',handle:'@fatima_z',av:'av4',init:'FZ',stars:5,project:'Discord Name Hunter',
+ texts:{fr:'Incroyable. Gratuit, sans inscription, et ça marche parfaitement. Hūsey est un génie.',en:'Incredible. Free, no signup, works perfectly. Hūsey is a genius.',es:'Increíble. Gratis, sin registro y funciona perfectamente. Hūsey es un genio.',it:'Incredibile. Gratuito, senza registrazione e funziona perfettamente. Hūsey è un genio.'}},
+{name:'Max L.',handle:'@maxl_net',av:'av5',init:'ML',stars:5,project:'Proxy Scraper',
+ texts:{fr:'Le plus propre des scrapers de proxies que j\'ai vu. Tout fonctionne dans le navigateur. Chapeau.',en:'The cleanest proxy scraper I\'ve seen. Everything runs in the browser. Hats off.',es:'El scraper de proxies más limpio que he visto. Todo funciona en el navegador. Chapeau.',it:'Il proxy scraper più pulito che abbia visto. Tutto funziona nel browser. Chapeau.'}},
+{name:'Ines B.',handle:'@inesb_fr',av:'av6',init:'IB',stars:5,project:'Netflix Checker',
+ texts:{fr:'Vérifié mon adresse et trouvé qu\'elle était dans une fuite. Outil essentiel en 2026.',en:'Checked my address and found it was in a breach. Essential tool in 2026.',es:'Verifiqué mi dirección y descubrí que estaba en una fuga. Herramienta esencial en 2026.',it:'Ho verificato il mio indirizzo e ho scoperto che era in una fuga. Strumento essenziale nel 2026.'}},
+{name:'Ryo K.',handle:'@ryok_jp',av:'av7',init:'RK',stars:5,project:'Mass Vérification',
+ texts:{fr:'Fast, clean, open source. C\'est tout ce qu\'on demande. Hūsey livre exactement ça.',en:'Fast, clean, open source. That\'s all you ask for. Hūsey delivers exactly that.',es:'Rápido, limpio, open source. Es todo lo que se pide. Hūsey lo entrega exactamente.',it:'Veloce, pulito, open source. È tutto quello che si chiede. Hūsey lo consegna esattamente.'}},
+{name:'Aisha N.',handle:'@aisha_nn',av:'av8',init:'AN',stars:5,project:'Discord Name Hunter',
+ texts:{fr:'Top outil, top design. J\'ai trouvé un username en quelques secondes. Vraiment impressionnant.',en:'Top tool, top design. Found a username in a few seconds. Really impressive.',es:'Herramienta top, diseño top. Encontré un username en segundos. Realmente impresionante.',it:'Strumento top, design top. Ho trovato un nome utente in pochi secondi. Davvero impressionante.'}},
+{name:'Ethan C.',handle:'@ethanc_dev',av:'av9',init:'EC',stars:5,project:'Proxy Scraper',
+ texts:{fr:'Utilise ça quotidiennement pour mes projets. Jamais eu de bug. Code de qualité professionnelle.',en:'Use this daily for my projects. Never had a bug. Professional quality code.',es:'Lo uso diariamente para mis proyectos. Nunca he tenido un error. Código de calidad profesional.',it:'Lo uso quotidianamente per i miei progetti. Mai avuto un bug. Codice di qualità professionale.'}},
+{name:'Sofia R.',handle:'@sofia_rx',av:'av1',init:'SR',stars:5,project:'Netflix Checker',
+ texts:{fr:'Simple, direct, utile. Exactement ce qu\'un bon outil devrait être. Je recommande.',en:'Simple, direct, useful. Exactly what a good tool should be. I recommend.',es:'Simple, directo, útil. Exactamente lo que debería ser una buena herramienta. Lo recomiendo.',it:'Semplice, diretto, utile. Esattamente quello che dovrebbe essere un buon strumento. Lo consiglio.'}},
+{name:'Lucas T.',handle:'@lucast_gh',av:'av2',init:'LT',stars:5,project:'Mass Vérification',
+ texts:{fr:'Parfait pour valider des listes entières. Rapide et sans config. Hūsey sait ce qu\'il fait.',en:'Perfect for validating entire lists. Fast and zero config. Hūsey knows what he\'s doing.',es:'Perfecto para validar listas enteras. Rápido y sin configuración. Hūsey sabe lo que hace.',it:'Perfetto per validare intere liste. Veloce e senza configurazione. Hūsey sa cosa sta facendo.'}},
+{name:'Hana J.',handle:'@hanaj_ux',av:'av3',init:'HJ',stars:5,project:'Discord Name Hunter',
+ texts:{fr:'Le meilleur outil Discord name hunter que j\'ai trouvé. Et c\'est gratuit. Incroyable.',en:'The best Discord name hunter I\'ve found. And it\'s free. Incredible.',es:'El mejor Discord name hunter que he encontrado. Y es gratis. Increíble.',it:'Il miglior Discord name hunter che abbia trovato. Ed è gratuito. Incredibile.'}},
+{name:'Ivan K.',handle:'@ivank_eu',av:'av4',init:'IK',stars:5,project:'Proxy Scraper',
+ texts:{fr:'Aucune installation, aucune clé API. Juste open sur le navigateur et ça marche. Respect.',en:'No install, no API key. Just open in browser and it works. Respect.',es:'Sin instalación, sin API key. Solo abrir en el navegador y funciona. Respeto.',it:'Nessuna installazione, nessuna API key. Si apre nel browser e funziona. Rispetto.'}},
+{name:'Mia L.',handle:'@mia_live',av:'av5',init:'ML',stars:5,project:'Netflix Checker',
+ texts:{fr:'Testé pour ma famille entière. Découvert 3 emails compromis. Outil indispensable.',en:'Tested for my whole family. Found 3 compromised emails. Indispensable tool.',es:'Probado para toda mi familia. Encontré 3 emails comprometidos. Herramienta indispensable.',it:'Testato per tutta la mia famiglia. Trovate 3 email compromesse. Strumento indispensabile.'}},
+{name:'Arjun P.',handle:'@arjunp_in',av:'av6',init:'AP',stars:5,project:'Mass Vérification',
+ texts:{fr:'Vérifié 500+ entrées en quelques minutes. Résultats nets. Code open source vraiment clean.',en:'Verified 500+ entries in a few minutes. Clean results. Really clean open source code.',es:'Verifiqué 500+ entradas en minutos. Resultados limpios. Código open source muy limpio.',it:'Verificato 500+ voci in pochi minuti. Risultati puliti. Codice open source davvero pulito.'}},
+{name:'Zoé M.',handle:'@zoem_fr',av:'av7',init:'ZM',stars:5,project:'Discord Name Hunter',
+ texts:{fr:'Super intuitif. Design moderne et résultats instantanés. Je l\'utilise régulièrement.',en:'Super intuitive. Modern design and instant results. I use it regularly.',es:'Super intuitivo. Diseño moderno y resultados instantáneos. Lo uso regularmente.',it:'Super intuitivo. Design moderno e risultati istantanei. Lo uso regolarmente.'}},
+{name:'Noah B.',handle:'@noahb_de',av:'av8',init:'NB',stars:4,project:'Proxy Scraper',
+ texts:{fr:'Bon outil de scraping. Fonctionne bien pour mes besoins. Quelques petites améliorations seraient bienvenues.',en:'Good scraping tool. Works well for my needs. A few small improvements would be welcome.',es:'Buena herramienta de scraping. Funciona bien para mis necesidades. Algunas mejoras serían bienvenidas.',it:'Buono strumento di scraping. Funziona bene per le mie esigenze. Alcuni piccoli miglioramenti sarebbero benvenuti.'}},
+{name:'Chloe W.',handle:'@chloew_ca',av:'av9',init:'CW',stars:5,project:'Netflix Checker',
+ texts:{fr:'Utilisé pour vérifier la sécurité de mes comptes. Résultat clair et immédiat. Parfait.',en:'Used to check the security of my accounts. Clear and immediate result. Perfect.',es:'Usado para verificar la seguridad de mis cuentas. Resultado claro e inmediato. Perfecto.',it:'Usato per verificare la sicurezza dei miei account. Risultato chiaro e immediato. Perfetto.'}},
+{name:'Marco V.',handle:'@marcov_it',av:'av1',init:'MV',stars:5,project:'Mass Vérification',
+ texts:{fr:'Le site de vérification masse est top. Interface propre et efficacité maximale.',en:'The mass verification site is great. Clean interface and maximum efficiency.',es:'El sitio de verificación masiva es genial. Interfaz limpia y máxima eficiencia.',it:'Il sito di verifica di massa è ottimo. Interfaccia pulita e massima efficienza.'}},
+{name:'Layla H.',handle:'@laylah_ae',av:'av2',init:'LH',stars:5,project:'Discord Name Hunter',
+ texts:{fr:'Trouvé mon nom d\'utilisateur parfait en quelques clics. Outil simple et puissant.',en:'Found my perfect username in a few clicks. Simple and powerful tool.',es:'Encontré mi nombre de usuario perfecto en pocos clics. Herramienta simple y poderosa.',it:'Ho trovato il mio nome utente perfetto in pochi clic. Strumento semplice e potente.'}},
+{name:'Ben A.',handle:'@bena_au',av:'av3',init:'BA',stars:5,project:'Proxy Scraper',
+ texts:{fr:'Open source, gratuit, et ça marche. C\'est tout ce que je demande. Bravo Hūsey.',en:'Open source, free, and it works. That\'s all I ask. Props to Hūsey.',es:'Open source, gratuito y funciona. Es todo lo que pido. Felicitaciones a Hūsey.',it:'Open source, gratuito e funziona. È tutto quello che chiedo. Bravo Hūsey.'}},
+{name:'Nina C.',handle:'@ninac_br',av:'av4',init:'NC',stars:5,project:'Netflix Checker',
+ texts:{fr:'Outil de sécurité gratuit et efficace. Mon e-mail était dans une fuite, je l\'aurais jamais su sans ça.',en:'Free and effective security tool. My email was in a breach, I would never have known without this.',es:'Herramienta de seguridad gratuita y eficaz. Mi email estaba en una fuga, nunca lo hubiera sabido sin esto.',it:'Strumento di sicurezza gratuito ed efficace. La mia email era in una fuga, non l\'avrei mai saputo senza questo.'}},
+];
+
+function renderReviews(){
+  const grid=document.getElementById('reviews-grid');
+  if(!grid)return;
+  grid.innerHTML=REVIEWS.map(r=>{
+    const txt=r.texts[currentLang]||r.texts.fr;
+    const stars='★'.repeat(r.stars)+'☆'.repeat(5-r.stars);
+    return `<div class="review-card">
+      <div class="review-header">
+        <div class="review-avatar ${r.av}">${r.init}</div>
+        <div><div class="review-name">${r.name}</div><div class="review-handle">${r.handle}</div></div>
+      </div>
+      <div class="review-stars">${stars}</div>
+      <div class="review-text">${txt}</div>
+      <span class="review-project">${r.project}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── CURSOR GLOW ──
+const glow=document.getElementById('cursor-glow');
+let mx=0,my=0,gx=0,gy=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY});
+function animGlow(){
+  gx+=(mx-gx)*.08;gy+=(my-gy)*.08;
+  glow.style.left=gx+'px';glow.style.top=gy+'px';
+  requestAnimationFrame(animGlow);
+}
+animGlow();
+
+// ── PARALLAX ORBS ──
+const orb1=document.getElementById('orb1');
+const orb2=document.getElementById('orb2');
+document.addEventListener('mousemove',e=>{
+  const x=(e.clientX/window.innerWidth-.5)*30;
+  const y=(e.clientY/window.innerHeight-.5)*20;
+  orb1.style.transform=`translate(${x}px,${y}px)`;
+  orb2.style.transform=`translate(${-x*.6}px,${-y*.6}px)`;
+});
+
+// ── TECH BARS ANIMATE ON SCROLL ──
+const bars=document.querySelectorAll('.tech-bar-fill');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const w=e.target.dataset.width;
+      e.target.style.width=w+'%';
+    }
+  });
+},{threshold:.3});
+bars.forEach(b=>obs.observe(b));
+
+// ── 3D CANVAS PARTICLES ──
+const canvas=document.getElementById('canvas-bg');
+const ctx=canvas.getContext('2d');
+let W,H,particles=[];
+
+function resize(){
+  W=canvas.width=window.innerWidth;
+  H=canvas.height=window.innerHeight;
+}
+resize();
+window.addEventListener('resize',resize);
+
+class Particle{
+  constructor(){this.reset()}
+  reset(){
+    this.x=Math.random()*W;
+    this.y=Math.random()*H;
+    this.z=Math.random()*2+.5;
+    this.vx=(Math.random()-.5)*.3/this.z;
+    this.vy=(Math.random()-.5)*.2/this.z;
+    this.r=Math.random()*1.5+.5;
+    const cols=['rgba(108,99,255,','rgba(0,212,255,','rgba(255,107,107,'];
+    this.col=cols[Math.floor(Math.random()*cols.length)];
+    this.a=Math.random()*.6+.1;
+    this.pulse=Math.random()*Math.PI*2;
+  }
+  update(){
+    this.pulse+=.02;
+    this.x+=this.vx;this.y+=this.vy;
+    const alpha=this.a*(0.7+0.3*Math.sin(this.pulse));
+    ctx.beginPath();
+    ctx.arc(this.x,this.y,this.r*this.z,0,Math.PI*2);
+    ctx.fillStyle=this.col+alpha+')';
+    ctx.fill();
+    if(this.x<0||this.x>W||this.y<0||this.y>H)this.reset();
+  }
+}
+
+// Lines connecting close particles
+function drawConnections(){
+  const maxDist=120;
+  for(let i=0;i<particles.length;i++){
+    for(let j=i+1;j<particles.length;j++){
+      const dx=particles[i].x-particles[j].x;
+      const dy=particles[i].y-particles[j].y;
+      const d=Math.sqrt(dx*dx+dy*dy);
+      if(d<maxDist){
+        const a=(1-d/maxDist)*.08;
+        ctx.beginPath();
+        ctx.moveTo(particles[i].x,particles[i].y);
+        ctx.lineTo(particles[j].x,particles[j].y);
+        ctx.strokeStyle=`rgba(108,99,255,${a})`;
+        ctx.lineWidth=.5;
+        ctx.stroke();
+      }
+    }
+  }
+}
+
+for(let i=0;i<80;i++) particles.push(new Particle());
+
+let last=0;
+function loop(ts){
+  const dt=ts-last;last=ts;
+  // 240fps-smooth: only clear and draw
+  ctx.clearRect(0,0,W,H);
+  drawConnections();
+  particles.forEach(p=>p.update());
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// ── CARD TILT 3D ──
+document.querySelectorAll('.project-card').forEach(card=>{
+  card.addEventListener('mousemove',e=>{
+    const r=card.getBoundingClientRect();
+    const x=(e.clientX-r.left)/r.width-.5;
+    const y=(e.clientY-r.top)/r.height-.5;
+    card.style.transform=`translateY(-6px) scale(1.01) rotateX(${-y*8}deg) rotateY(${x*8}deg)`;
+    card.style.perspective='800px';
+  });
+  card.addEventListener('mouseleave',()=>{
+    card.style.transform='';
+  });
+});
+</script>
+</body>
+</html>
